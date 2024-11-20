@@ -32,7 +32,7 @@ class MinimalSubscriber(Node):
         self.subscription
 
     def listener_callback(self, msg):
-        points = read_points(cloud=msg, field_names=('x', 'y', 'z'), skip_nans=False)
+        points = read_points(cloud=msg, field_names=('x', 'y', 'z', 'intensity', 'ring'), skip_nans=False)
         point_array = np.array([[p[0], p[1], p[2]] for p in points], dtype=np.float32)
 
         point_array[np.isnan(point_array)] = 999.0
