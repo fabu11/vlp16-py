@@ -16,9 +16,9 @@ rosbag2_bagfile_information:
   compression_format: ""
   compression_mode: ""
   relative_file_paths:
-    - rosbag2_2024_11_18-11_06_51_0.db3
+    - small_bag.db3
   files:
-    - path: rosbag2_2024_11_18-11_06_51_0.db3
+    - path: small_bag.db3
       starting_time:
         nanoseconds_since_epoch: 1731956812018553739
       duration:
