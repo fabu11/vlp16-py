@@ -33,9 +33,12 @@ class MinimalSubscriber(Node):
 
     def listener_callback(self, msg):
         points = read_points(cloud=msg, field_names=('x', 'y', 'z'), skip_nans=False)
-        np.set_printoptions(threshold=np.inf)
-        print(np.array(list(points)))
-        self.get_logger().info(f'I received a PointCloud2 message with height: {msg.height}, width: {msg.width}')
+        point_array = np.array([[p[0], p[1], p[2]] for p in points], dtype=np.float32)
+
+        point_array[np.isnan(point_array)] = 999.0
+
+        np.savetxt('point_cloud.txt', point_array, fmt='%.4f', header='x y z')
+        self.get_logger().info(f'Saved point cloud with {point_array.shape[0]} points')
 
 def main(args=None):
     print("start")
