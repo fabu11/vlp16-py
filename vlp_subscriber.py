@@ -19,7 +19,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs_py.point_cloud2 import read_points
- 
+import time
 
 class MinimalSubscriber(Node):
     def __init__(self):
@@ -37,8 +37,11 @@ class MinimalSubscriber(Node):
 
         point_array[np.isnan(point_array)] = 999.0
 
-        np.savetxt('point_cloud.txt', point_array, fmt='%.4f', header='x y z')
-        self.get_logger().info(f'Saved point cloud with {point_array.shape[0]} points')
+        timestamp = int(time.time() * 1000)
+        filename = f'scan_{timestamp}.txt'
+
+        np.savetxt(filename, point_array, fmt='%.4f', header='x y z')
+        self.get_logger().info(f'Saved point cloud to {filename} with {point_array.shape[0]} points')
 
 def main(args=None):
     print("start")
