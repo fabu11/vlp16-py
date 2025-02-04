@@ -44,15 +44,19 @@ class MinimalSubscriber(Node):
             self.get_logger().error("Classifier file not found. Please make sure 'lidar_classifier.sav' is in the correct location.")
             return
 
-        print(hasattr(loaded_model, 'predict_proba'))
+        # get probabilities
         probabilities = loaded_model.predict_proba(df[['x', 'y', 'z', 'intensity']])
         probability = probabilities.max(axis=1).mean()
 
+        # get predictions
         predictions = loaded_model.predict(df[['x', 'y', 'z', 'intensity']])
         cntrs = Counter(predictions)
         prediction = cntrs.most_common(1)[0][0]
+
+        # if probability is less than 95, then it is unsure
         if probability < .95:
             prediction = f"UNKNOWN (Gussed: {prediction})"
+
         print(f"Predicted: {prediction} ({probability})")
 
 
