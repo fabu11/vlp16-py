@@ -55,7 +55,7 @@ class MinimalSubscriber(Node):
 
         # if probability is less than 95, then it is unsure
         if probability < .95:
-            prediction = f"UNKNOWN (Gussed: {prediction})"
+            prediction = f"UNKNOWN (Guessed: {prediction})"
 
         print(f"Predicted: {prediction} ({probability})")
 

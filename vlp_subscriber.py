@@ -19,12 +19,12 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs_py.point_cloud2 import read_points
-import time, os, math
+import time, os, math, sys
 
 cnt = 0
 
 class MinimalSubscriber(Node):
-    def __init__(self):
+    def __init__(self, output_dir):
         super().__init__('minimal_subscriber')
         # Shortest distance used in sort
         self.shortest_distance = {               
@@ -40,9 +40,10 @@ class MinimalSubscriber(Node):
         self.subscription
 
         self.directory = "./output"
+        if output_dir:
+            self.directory = output_dir
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
-
 
     def calculate_range(self, x, y, z):
         return math.sqrt(x**2 + y**2 + z**2)
@@ -68,9 +69,17 @@ class MinimalSubscriber(Node):
         
 
 def main(args=None):
+    args = sys.argv[1:]
+    output_dir = None
+    if '-o' in args:
+        o_index = args.index('-o')
+        output_dir = args[o_index + 1]
+        if not output_dir:
+            print("error with output_dir")
+            exit(-1)
     print("start")
     rclpy.init(args=args)
-    minimal_subscriber = MinimalSubscriber()
+    minimal_subscriber = MinimalSubscriber(output_dir)
     rclpy.spin(minimal_subscriber)
     minimal_subscriber.destroy_node()
     rclpy.shutdown()
