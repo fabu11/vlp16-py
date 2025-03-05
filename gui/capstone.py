@@ -23,12 +23,6 @@ import pandas as pd
 import pickle
 from collections import Counter
 
-with open("./lidar_classifier.sav", "rb") as f:
-    loaded_model = pickle.load(f)
-
-LOADED_MODEL = loaded_model
-MAX_POINTS = 29183 
-
 class MinimalSubscriber(Node):
     def __init__(self):
         super().__init__('minimal_subscriber')
@@ -40,40 +34,27 @@ class MinimalSubscriber(Node):
         self.subscription
 
     def listener_callback(self, msg):
-        # Extract the point cloud from the ROS message
-        points = read_points(msg, field_names=('x', 'y', 'z', 'intensity'), skip_nans=False)
-        
-        # Convert the points into a Pandas DataFrame
-        df = pd.DataFrame(points, columns=['x', 'y', 'z', 'intensity'])
+        points = read_points(cloud=msg, field_names=('x', 'y', 'z', 'intensity'), skip_nans=False) # pyright: ignore
+        df = pd.DataFrame(points, columns=['x', 'y', 'z', 'intensity']) # pyright: ignore
 
-        # Handle NaNs by replacing rows with [999, 999, 999, 999]
-        df.loc[df.isna().any(axis=1)] = [999, 999, 999, 999]
-        
-        # Trim excess points if too many
-        df = df.iloc[:MAX_POINTS]
-        
-        # Pad with zeros if the number of points is less than MAX_POINTS
-        pad_width = MAX_POINTS - df.shape[0]
-        if pad_width > 0:
-            padding = np.zeros((pad_width, 4))  # Zero-padding for x, y, z, intensity
-            df = pd.concat([df, pd.DataFrame(padding, columns=['x', 'y', 'z', 'intensity'])])
-        
-        # Flatten the DataFrame to match the input shape (1, 116732) as required
-        df = df.to_numpy().flatten()[:116732].reshape(1, -1)
+        try:
+            with open('lidar_classifier.sav', 'rb') as f:
+                loaded_model = pickle.load(f)
+        except FileNotFoundError:
+            self.get_logger().error("Classifier file not found. Please make sure 'lidar_classifier.sav' is in the correct location.")
+            return
 
-        # Predict the probabilities for each class
-        probabilities = LOADED_MODEL.predict_proba(df)
+        # get probabilities
+        probabilities = loaded_model.predict_proba(df[['x', 'y', 'z', 'intensity']])
         probability = probabilities.max(axis=1).mean()
-        print(probability)
-        # probability = probabilities[0].max()  # Get the max probability for the first (and only) sample
 
-        # Get the class prediction
-        predictions = LOADED_MODEL.predict(df)
+        # get predictions
+        predictions = loaded_model.predict(df[['x', 'y', 'z', 'intensity']])
         cntrs = Counter(predictions)
         prediction = cntrs.most_common(1)[0][0]
 
-        # If probability is less than 95, mark the prediction as unsure
-        if probability < 0.95:
+        # if probability is less than 95, then it is unsure
+        if probability < .95:
             prediction = f"UNKNOWN (Guessed: {prediction})"
 
         print(f"Predicted: {prediction} ({probability})")
