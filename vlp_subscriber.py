@@ -30,7 +30,6 @@ class MinimalSubscriber(Node):
                         "range": 9999,
                         "index": 0,
                         }
-        self.storage = {}
         self.subscription = self.create_subscription(
             PointCloud2,
             'velodyne_points',

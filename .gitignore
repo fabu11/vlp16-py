@@ -1,3 +1,4 @@
+*.sav
 venv
 output/
 bagfiles/

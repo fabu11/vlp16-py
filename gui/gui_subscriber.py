@@ -1,3 +1,4 @@
+import math
 import pickle
 from rclpy.node import Node
 from sensor_msgs.msg import PointCloud2
@@ -21,6 +22,10 @@ class VelodyneSubscriber(Node):
             self.pointcloud_callback,
             10)
         
+        self.shortest_distance = {               
+                        "range": 9999,
+                        "index": 0,
+                        }
         self.qt_signals = qt_signals
         self.lock = Lock()
         self.point_count = 0
@@ -31,8 +36,10 @@ class VelodyneSubscriber(Node):
         except FileNotFoundError:
             errmsg = f"Classifier file not found! {self.model_filepath}"
             print(errmsg)
-            self.qt_signals.pred.emit(errmsg)
             exit(1)
+
+    def calculate_range(self, x, y, z):
+        return math.sqrt(x**2 + y**2 + z**2)
 
     def pointcloud_callback(self, msg):
         MAX_POINTS = 29183  # This should match the max_points from your preprocessing
@@ -43,6 +50,21 @@ class VelodyneSubscriber(Node):
 
             points = read_points(msg, field_names=('x', 'y', 'z', 'intensity'), skip_nans=False) # pyright: ignore
             
+            for i, p in enumerate(points):
+                # Distance is shorter, need to update origin
+                c = self.calculate_range(p[0], p[1], p[2]) 
+                if(c < self.shortest_distance["range"]):
+                    new_shortest = {
+                            "range": c,
+                            "index": i,
+                            }
+                    self.shortest_distance = new_shortest
+            # Reorder points so that shortest is always first, keep order
+            points = np.array(points)
+            new_p = np.concatenate((points[self.shortest_distance["index"]:], points[:self.shortest_distance["index"]]))
+            points = np.array(new_p)
+            # print(new_p)
+
             # Convert the points into a Pandas DataFrame
             df = pd.DataFrame(points, columns=['x', 'y', 'z', 'intensity']) # pyright: ignore
 
@@ -63,7 +85,7 @@ class VelodyneSubscriber(Node):
 
             # Predict the probabilities for each class
             probabilities = self.loaded_model.predict_proba(df)
-            probability = probabilities.max(axis=1).mean()
+            probability = probabilities[0].max()  
             # probability = probabilities[0].max()  # Get the max probability for the first (and only) sample
 
             # Get the class prediction
