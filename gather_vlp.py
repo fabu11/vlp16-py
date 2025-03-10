@@ -15,6 +15,7 @@
 # must have ros sourced in bash
 
 import numpy as np
+import pandas as pd
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import PointCloud2
@@ -25,16 +26,13 @@ import time, os, math, sys, glob
 class MinimalSubscriber(Node):
     def __init__(self, output_dir):
         super().__init__('minimal_subscriber')
-        # Shortest distance used in sort
-        self.shortest_distance = {               
-                        "range": 9999,
-                        "index": 0,
-                        }
+
         self.subscription = self.create_subscription(
             PointCloud2,
             'velodyne_points',
             self.listener_callback,
             10)
+        self.count = 0
         self.subscription
         self.first = True
         # default output to ./output
@@ -55,35 +53,18 @@ class MinimalSubscriber(Node):
                         os.remove(f)
                     print(f"[I/O]: removed {len(files)} files")
 
-    def calculate_range(self, x, y, z):
-        return math.sqrt(x**2 + y**2 + z**2)
 
     def listener_callback(self, msg):
         if(self.first):
             print("[Listener]: Subscribed")
             self.first = False
         # Get points from /velodyne_points
-        points = list(read_points(cloud=msg, field_names=('x', 'y', 'z', 'intensity'), skip_nans=False)) # pyright: ignore
-        # Update shortest point
-        for i, p in enumerate(points):
-            # Distance is shorter, need to update origin
-            c = self.calculate_range(p[0], p[1], p[2]) 
-            if(c < self.shortest_distance["range"]):
-                new_shortest = {
-                        "range": c,
-                        "index": i,
-                        }
-                self.shortest_distance = new_shortest
-        # Reorder points so that shortest is always first, keep order
-        new_p = points[self.shortest_distance["index"]:] + points[:self.shortest_distance["index"]]
-        new_p = np.array(new_p)
-        # Set NaN to 0
-        np.nan_to_num(new_p, nan=0)
-        # Save to output directory
-        timestamp = int(time.time() * 1000)
-        filename = f'{self.directory}/scan_{timestamp}.txt'
-        np.savetxt(filename, new_p, fmt='%.4f', header='x\ty\tz')
-        self.get_logger().info(f'[Listener]: Saved point cloud to {filename} with {len(new_p)} points')
+        points = read_points(cloud=msg, field_names=('x', 'y', 'z'), skip_nans=True) # pyright: ignore
+        df = pd.DataFrame(points, columns=['x', 'y', 'z']) # pyright: ignore
+        filename = f'{self.directory}/scan_{self.count}.csv'
+        df.to_csv(filename, index=False)
+        self.count += 1
+        self.get_logger().info(f'[Listener]: Saved point cloud to {filename} with {len(df)} points')
         
 
 def main(args=None):
