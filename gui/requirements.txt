@@ -2,3 +2,6 @@ pyside6
 pandas
 numpy
 scikit-learn
+PyOpenGL
+PyOpenGL_accelerate
+tensorflow
