@@ -23,7 +23,8 @@ class VelodyneSubscriber(Node):
             10)
         
         # VOXEL CLASSIFIER
-        self.label_to_location = {0: 'frost_large', 1: 'capstone_lab', 2: 'baker_not_curved', 3: 'chumash', 4: 'embedded_lab', 5: 'open_lab'}
+        #self.label_to_location = {0: 'frost_large', 1: 'capstone_lab', 2: 'baker_not_curved', 3: 'chumash', 4: 'embedded_lab', 5: 'open_lab'}
+        self.label_to_location = {0: 'open_lab', 1: 'embedded_lab', 2: 'baker_not_curved', 3: 'chumash', 4: 'baker_hallway', 5: 'cs_classroom', 6: 'capstone_lab', 7: 'frost_large', 8: 'e_hall', 9: 'cs_hall'}
         self.voxel_grid_size = (64, 64, 64)
         self.model_filepath = "../voxel_classifier.keras"
         try: 
